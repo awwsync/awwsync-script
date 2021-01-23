@@ -2,7 +2,7 @@ defmodule AWWSYNC do
   @secs_per_day 86400
 
   def generate_doc do
-    get_since_date() |> Github.get_events()
+    Github.get_events("facebook", "react", get_since_date())
   end
 
   @spec get_since_date :: DateTime.t()

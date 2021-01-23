@@ -23,18 +23,19 @@ defmodule Github do
   end
 
   @spec get_events(String.t(), String.t(), DateTime.t()) :: [any]
-  def get_events(owner, repo, since_date) do
-    {response, pagination_url, _client_auth} =
+  @spec get_events(String.t(), String.t(), DateTime.t(), String.t()) :: [any]
+  def get_events(owner, repo, since_date, pagination_url \\ nil) do
+    {{200, data, _response}, pagination_url, _client_auth} =
       Tentacat.get("repos/#{owner}/#{repo}/issues/events", @client)
 
-    {200, data, _response} = response
+    IO.puts(pagination_url)
 
     {:ok, first_event_date, _offset} =
       List.first(data) |> get_in(["created_at"]) |> DateTime.from_iso8601()
 
     case DateTime.compare(first_event_date, since_date) do
       :gt -> data
-      res when res in [:lt, :eq] -> IO.puts(:lt)
+      res when res in [:lt, :eq] -> [data | get_events(owner, repo, since_date, pagination_url)]
     end
   end
 
