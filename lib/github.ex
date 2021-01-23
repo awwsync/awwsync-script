@@ -19,6 +19,9 @@ defmodule Github do
   #   {200, data, _response} = client.get(url)
   # end
 
+  def events_fetcher() do
+  end
+
   @spec get_events(String.t(), String.t(), DateTime.t()) :: [any]
   def get_events(owner, repo, since_date) do
     {response, pagination_url, _client_auth} =
