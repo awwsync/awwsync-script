@@ -19,10 +19,10 @@ defmodule Github do
   #   {200, data, _response} = client.get(url)
   # end
 
-  @spec get_events(DateTime.t()) :: [any]
-  def get_events(since_date) do
+  @spec get_events(String.t(), String.t(), DateTime.t()) :: [any]
+  def get_events(owner, repo, since_date) do
     {response, pagination_url, _client_auth} =
-      Tentacat.Issues.Events.list_all(@client, "facebook", "react")
+      Tentacat.get("repos/#{owner}/#{repo}/issues/events", @client)
 
     {200, data, _response} = response
 
