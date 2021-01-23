@@ -14,19 +14,30 @@ defmodule Github do
     "reviewed"
   ]
 
+  # @spec get_events(DateTime.t(), Tentacat.t(), String.t()) :: {200, any, any}
+  # def events_fetcher(since_date, client, url) do
+  #   {200, data, _response} = client.get(url)
+  # end
+
+  @spec get_events(DateTime.t()) :: [any]
   def get_events(since_date) do
-    {response, _pagination_url, _client_auth} =
+    {response, pagination_url, _client_auth} =
       Tentacat.Issues.Events.list_all(@client, "facebook", "react")
 
-    # IO.inspect(response)
-    # IO.inspect(daresta)
-    # IO.inspect(client)
-
     {200, data, _response} = response
-    IO.inspect(data)
+
+    {:ok, first_event_date, _offset} =
+      List.first(data) |> get_in(["created_at"]) |> DateTime.from_iso8601()
+
+    case DateTime.compare(first_event_date, since_date) do
+      :gt -> data
+      res when res in [:lt, :eq] -> IO.puts(:lt)
+    end
   end
 
   def parse_events(events) do
-    events
+    Enum.filter(events, fn %{"event" => event_type} ->
+      Enum.member?(@watched_events, event_type)
+    end)
   end
 end
