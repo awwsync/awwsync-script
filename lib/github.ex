@@ -15,9 +15,9 @@ defmodule Github do
   ]
 
   @spec get_events(String.t(), String.t(), DateTime.t(), Integer.t(), List.t()) :: [any]
-  def get_events(owner, repo, since_date, page \\ 0, acc \\ []) do
+  def get_events(owner, repo, since_date, page \\ 1, acc \\ []) do
     events = events_fetcher(owner, repo, page)
-    new_acc = [acc | events]
+    new_acc = acc ++ events
 
     {:ok, last_event_date, _offset} =
       List.last(events) |> get_in(["created_at"]) |> DateTime.from_iso8601()
@@ -34,11 +34,11 @@ defmodule Github do
   @spec filter_events([any], DateTime.t()) :: [any]
   def filter_events(events, since_date) do
     Enum.filter(events, fn event ->
-      is_event_applicable(event, since_date)
+      is_event_applicable?(event, since_date)
     end)
   end
 
-  defp is_event_applicable(%{"event" => event_type, "created_at" => event_date}, since_date) do
+  defp is_event_applicable?(%{"event" => event_type, "created_at" => event_date}, since_date) do
     {:ok, event_dt, _offset} = DateTime.from_iso8601(event_date)
 
     DateTime.compare(event_dt, since_date) in [:gt, :eq] &&
