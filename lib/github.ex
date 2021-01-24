@@ -19,23 +19,29 @@ defmodule Github do
   #   {200, data, _response} = client.get(url)
   # end
 
-  def events_fetcher() do
+  defp events_fetcher(owner, repo, page) do
+    IO.puts("repos/#{owner}/#{repo}/issues/events?page=#{page}")
+
+    {{200, data, _response}, _pagination_url, _client_auth} =
+      Tentacat.get("repos/#{owner}/#{repo}/issues/events?page=#{page}", @client)
+
+    data
   end
 
-  @spec get_events(String.t(), String.t(), DateTime.t()) :: [any]
-  @spec get_events(String.t(), String.t(), DateTime.t(), String.t()) :: [any]
-  def get_events(owner, repo, since_date, pagination_url \\ nil) do
-    {{200, data, _response}, pagination_url, _client_auth} =
-      Tentacat.get("repos/#{owner}/#{repo}/issues/events", @client)
+  @spec get_events(String.t(), String.t(), DateTime.t(), Integer.t(), List.t()) :: [any]
+  def get_events(owner, repo, since_date, page \\ 0, acc \\ []) do
+    events = events_fetcher(owner, repo, page)
+    new_acc = [acc | events]
 
-    IO.puts(pagination_url)
+    {:ok, last_event_date, _offset} =
+      List.last(events) |> get_in(["created_at"]) |> DateTime.from_iso8601()
 
-    {:ok, first_event_date, _offset} =
-      List.first(data) |> get_in(["created_at"]) |> DateTime.from_iso8601()
+    case DateTime.compare(last_event_date, since_date) do
+      res when res in [:gt, :eq] ->
+        get_events(owner, repo, since_date, page + 1, new_acc)
 
-    case DateTime.compare(first_event_date, since_date) do
-      :gt -> data
-      res when res in [:lt, :eq] -> [data | get_events(owner, repo, since_date, pagination_url)]
+      :lt ->
+        new_acc
     end
   end
 
