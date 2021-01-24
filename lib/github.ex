@@ -14,11 +14,7 @@ defmodule Github do
     "reviewed"
   ]
 
-  # @spec get_events(DateTime.t(), Tentacat.t(), String.t()) :: {200, any, any}
-  # def events_fetcher(since_date, client, url) do
-  #   {200, data, _response} = client.get(url)
-  # end
-
+  @spec events_fetcher(String.t(), String.t(), Integer.t()) :: [any]
   defp events_fetcher(owner, repo, page) do
     IO.puts("repos/#{owner}/#{repo}/issues/events?page=#{page}")
 
