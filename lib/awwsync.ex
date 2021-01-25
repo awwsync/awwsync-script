@@ -1,4 +1,4 @@
-defmodule AWWSYNC do
+defmodule AwwSync do
   @secs_per_day 86400
 
   def generate_doc do

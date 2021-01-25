@@ -1,4 +1,4 @@
-defmodule AWWSYNC.MixProject do
+defmodule AwwSync.MixProject do
   use Mix.Project
 
   def project do
@@ -21,7 +21,8 @@ defmodule AWWSYNC.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:tentacat, "~> 2.0"}
+      {:tentacat, "~> 2.0"},
+      {:slack, "~> 0.23.5"}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]

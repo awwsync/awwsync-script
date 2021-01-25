@@ -1,6 +1,6 @@
-defmodule AWWSYNCTest do
+defmodule AwwSyncTest do
   use ExUnit.Case
-  doctest AWWSYNC
+  doctest AwwSync
 
   test "greets the world" do
     assert AWWSYNC.hello() == :world
