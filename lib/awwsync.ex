@@ -4,8 +4,7 @@ defmodule AwwSync do
   def generate_doc do
     Github.get_events("facebook", "react", get_since_date())
     |> Slack.prepare_message()
-
-    # |> Slack.send_message()
+    |> Slack.send_message()
   end
 
   @spec get_since_date :: DateTime.t()
