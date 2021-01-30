@@ -14,6 +14,18 @@ defmodule Github do
     "reviewed"
   ]
 
+  defp get_repo_commits_url(owner, repo) do
+    "https://api.github.com/repos/#{owner}/#{repo}/commits"
+  end
+
+  defp get_issue_events_url(owner, repo) do
+    "https://api.github.com/repos/#{owner}/#{repo}/issues/events"
+  end
+
+  defp get_issue_timeline_events_url(owner, repo, issue_number) do
+    "https://api.github.com/repos/#{owner}/#{repo}/issues/#{issue_number}/timeline"
+  end
+
   @spec get_events(String.t(), String.t(), DateTime.t(), Integer.t(), List.t()) :: [any]
   def get_events(owner, repo, since_date, page \\ 1, acc \\ []) do
     events = events_fetcher(owner, repo, page)
