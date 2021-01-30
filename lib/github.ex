@@ -14,6 +14,12 @@ defmodule Github do
     "reviewed"
   ]
 
+  # for new PRs
+  defp get_repo_issues_url(owner, repo) do
+    "https://api.github.com/repos/#{owner}/#{repo}/issues"
+  end
+
+  # for new commits
   defp get_repo_commits_url(owner, repo) do
     "https://api.github.com/repos/#{owner}/#{repo}/commits"
   end
@@ -22,6 +28,7 @@ defmodule Github do
     "https://api.github.com/repos/#{owner}/#{repo}/issues/events"
   end
 
+  # for comments/etc on a particular issue
   defp get_issue_timeline_events_url(owner, repo, issue_number) do
     "https://api.github.com/repos/#{owner}/#{repo}/issues/#{issue_number}/timeline"
   end
