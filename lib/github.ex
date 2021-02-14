@@ -67,6 +67,10 @@ defmodule Github do
     issues_with_timeline
   end
 
+  def get_merged_prs(owner, repo) do
+    url = get_issue_events_url(owner, repo)
+  end
+
   @spec filter_events([any], DateTime.t()) :: [any]
   def filter_events(events, since_date) do
     Enum.filter(events, fn event ->
@@ -83,7 +87,6 @@ defmodule Github do
 
   defp fetch_from_gh(url, query_params \\ %{}) do
     query_string = URI.encode_query(query_params)
-    IO.puts(url <> "?#{query_string}")
 
     %{:body => data} =
       HTTPoison.get!(url <> "?#{query_string}", [
