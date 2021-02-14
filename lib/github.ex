@@ -45,14 +45,15 @@ defmodule Github do
   @spec get_events(String.t(), String.t(), DateTime.t(), Integer.t(), List.t()) :: [any]
   def get_issues_events(owner, repo, since_date, page \\ 1, acc \\ []) do
     url = get_repo_issues_url(owner, repo)
-    new_acc = acc ++ events
+    issues = fetch(url)
+    new_acc = acc ++ issues
 
     {:ok, last_event_date, _offset} =
       List.last(events) |> get_in(["created_at"]) |> DateTime.from_iso8601()
 
     case DateTime.compare(last_event_date, since_date) do
       res when res in [:gt, :eq] ->
-        get_events(owner, repo, since_date, page + 1, new_acc)
+        get_issues_events(owner, repo, since_date, page + 1, new_acc)
 
       :lt ->
         filter_events(new_acc, since_date)
@@ -74,10 +75,14 @@ defmodule Github do
   end
 
   @spec events_fetcher(String.t(), String.t(), Integer.t()) :: [any]
-  defp fetch(url) do
-    {:ok, response} =
-      HTTPoison.get!(url, [{"Authorization", "token " <> System.get_env(GITHUB_ACCESS_TOKEN, "")}])
+  defp fetch(url, query_params \\ %{}) do
+    querystring = URI.encode_query(query_params)
 
-    data
+    {:ok, response} =
+      HTTPoison.get!(url <> querystring, [
+        {"Authorization", "token " <> System.get_env(GITHUB_ACCESS_TOKEN, "")}
+      ])
+
+    response
   end
 end
