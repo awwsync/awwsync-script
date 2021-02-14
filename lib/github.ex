@@ -1,5 +1,4 @@
 defmodule Github do
-  @client Tentacat.Client.new(%{access_token: System.get_env("GITHUB_ACCESS_TOKEN", "")})
   @watched_events [
     "closed",
     "commented",
@@ -14,14 +13,14 @@ defmodule Github do
     "reviewed"
   ]
 
-  # for new PRs
-  defp get_repo_issues_url(owner, repo) do
-    "https://api.github.com/repos/#{owner}/#{repo}/issues"
+  # for new releases
+  defp get_repo_releases_url(owner, repo) do
+    "https://api.github.com/repos/#{owner}/#{repo}/releases"
   end
 
-  # for new commits
-  defp get_repo_commits_url(owner, repo) do
-    "https://api.github.com/repos/#{owner}/#{repo}/commits"
+  # for new PRs/issues
+  defp get_repo_issues_url(owner, repo) do
+    "https://api.github.com/repos/#{owner}/#{repo}/issues"
   end
 
   defp get_issue_events_url(owner, repo) do
@@ -33,9 +32,19 @@ defmodule Github do
     "https://api.github.com/repos/#{owner}/#{repo}/issues/#{issue_number}/timeline"
   end
 
+  @doc """
+  Retrieves events related to issues (PRs are also considered issues)
+  - New issues/PRs
+  - Closed issues/PRs
+  - Comments
+  - Reviews
+  - Review requests
+  - Merged PRs
+  - Commits
+  """
   @spec get_events(String.t(), String.t(), DateTime.t(), Integer.t(), List.t()) :: [any]
-  def get_events(owner, repo, since_date, page \\ 1, acc \\ []) do
-    events = events_fetcher(owner, repo, page)
+  def get_issues_events(owner, repo, since_date, page \\ 1, acc \\ []) do
+    url = get_repo_issues_url(owner, repo)
     new_acc = acc ++ events
 
     {:ok, last_event_date, _offset} =
@@ -65,9 +74,9 @@ defmodule Github do
   end
 
   @spec events_fetcher(String.t(), String.t(), Integer.t()) :: [any]
-  defp events_fetcher(owner, repo, page) do
-    {{200, data, _response}, _pagination_url, _client_auth} =
-      Tentacat.get("repos/#{owner}/#{repo}/issues/events?page=#{page}", @client)
+  defp fetch(url) do
+    {:ok, response} =
+      HTTPoison.get!(url, [{"Authorization", "token " <> System.get_env(GITHUB_ACCESS_TOKEN, "")}])
 
     data
   end
