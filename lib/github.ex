@@ -42,22 +42,29 @@ defmodule Github do
   - Merged PRs
   - Commits
   """
-  @spec get_events(String.t(), String.t(), DateTime.t(), Integer.t(), List.t()) :: [any]
-  def get_issues_events(owner, repo, since_date, page \\ 1, acc \\ []) do
-    url = get_repo_issues_url(owner, repo)
-    issues = fetch(url)
-    new_acc = acc ++ issues
+  @spec get_issues_events(String.t(), String.t(), DateTime.t()) :: [any]
+  def get_issues_events(owner, repo, since_date) do
+    issues_url = get_repo_issues_url(owner, repo)
 
-    {:ok, last_event_date, _offset} =
-      List.last(events) |> get_in(["created_at"]) |> DateTime.from_iso8601()
+    issues =
+      fetch_from_gh(issues_url, %{
+        "state" => "all",
+        "sort" => "updated",
+        "direction" => "desc",
+        "since" => since_date
+      })
 
-    case DateTime.compare(last_event_date, since_date) do
-      res when res in [:gt, :eq] ->
-        get_issues_events(owner, repo, since_date, page + 1, new_acc)
+    IO.inspect(issues)
 
-      :lt ->
-        filter_events(new_acc, since_date)
-    end
+    issues_with_timeline =
+      Enum.map(issues, fn %{"number" => issue_number} = issue ->
+        timeline_url = get_issue_timeline_events_url(owner, repo, issue_number)
+        timeline = fetch_from_gh(timeline_url)
+
+        Map.put(issue, "timeline", timeline)
+      end)
+
+    issues_with_timeline
   end
 
   @spec filter_events([any], DateTime.t()) :: [any]
@@ -74,15 +81,16 @@ defmodule Github do
       Enum.member?(@watched_events, event_type)
   end
 
-  @spec events_fetcher(String.t(), String.t(), Integer.t()) :: [any]
-  defp fetch(url, query_params \\ %{}) do
-    querystring = URI.encode_query(query_params)
+  defp fetch_from_gh(url, query_params \\ %{}) do
+    query_string = URI.encode_query(query_params)
+    IO.puts(url <> "?#{query_string}")
 
-    {:ok, response} =
-      HTTPoison.get!(url <> querystring, [
-        {"Authorization", "token " <> System.get_env(GITHUB_ACCESS_TOKEN, "")}
+    %{:body => data} =
+      HTTPoison.get!(url <> "?#{query_string}", [
+        {"Authorization", "token " <> System.get_env("GITHUB_ACCESS_TOKEN", "")}
       ])
 
-    response
+    {:ok, json_data} = Jason.decode(data)
+    json_data
   end
 end

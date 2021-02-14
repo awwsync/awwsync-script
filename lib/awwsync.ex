@@ -2,7 +2,7 @@ defmodule AwwSync do
   @secs_per_day 86400
 
   def generate_doc do
-    Github.get_events("facebook", "react", get_since_date())
+    Github.get_issues_events("facebook", "react", get_since_date())
     |> Slack.prepare_message()
     |> Slack.send_message()
   end
