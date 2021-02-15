@@ -23,7 +23,7 @@ defmodule Github do
     "https://api.github.com/repos/#{owner}/#{repo}/issues"
   end
 
-  defp get_issue_events_url(owner, repo) do
+  defp get_issues_events_url(owner, repo) do
     "https://api.github.com/repos/#{owner}/#{repo}/issues/events"
   end
 
@@ -54,8 +54,6 @@ defmodule Github do
         "since" => since_date
       })
 
-    IO.inspect(issues)
-
     issues_with_timeline =
       Enum.map(issues, fn %{"number" => issue_number} = issue ->
         timeline_url = get_issue_timeline_events_url(owner, repo, issue_number)
@@ -67,22 +65,30 @@ defmodule Github do
     issues_with_timeline
   end
 
-  def get_merged_prs(owner, repo) do
-    url = get_issue_events_url(owner, repo)
-  end
+  @doc """
+  Retrieves merged PRs
+  """
+  @spec get_merged_prs(String.t(), String.t(), DateTime.t(), Integer.t(), List.t()) :: list
+  def get_merged_prs(owner, repo, since_date, page \\ 1, acc \\ []) do
+    url = get_issues_events_url(owner, repo)
+    events = fetch_from_gh(url, %{page: page})
+    new_acc = acc ++ events
 
-  @spec filter_events([any], DateTime.t()) :: [any]
-  def filter_events(events, since_date) do
-    Enum.filter(events, fn event ->
-      is_event_applicable?(event, since_date)
-    end)
-  end
+    {:ok, last_event_date, _offset} =
+      List.last(events) |> get_in(["created_at"]) |> DateTime.from_iso8601()
 
-  defp is_event_applicable?(%{"event" => event_type, "created_at" => event_date}, since_date) do
-    {:ok, event_dt, _offset} = DateTime.from_iso8601(event_date)
+    case DateTime.compare(last_event_date, since_date) do
+      res when res in [:gt, :eq] ->
+        get_merged_prs(owner, repo, since_date, page + 1, new_acc)
 
-    DateTime.compare(event_dt, since_date) in [:gt, :eq] &&
-      Enum.member?(@watched_events, event_type)
+      :lt ->
+        merged_event = "merged"
+
+        Enum.filter(new_acc, fn %{"event" => event_type, "created_at" => event_date} ->
+          {:ok, event_dt, _offset} = DateTime.from_iso8601(event_date)
+          DateTime.compare(event_dt, since_date) in [:gt, :eq] && event_type === merged_event
+        end)
+    end
   end
 
   defp fetch_from_gh(url, query_params \\ %{}) do
