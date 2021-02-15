@@ -11,6 +11,6 @@ defmodule AwwSync do
   def get_since_date() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
 
-    DateTime.add(datetime, -@secs_per_day)
+    DateTime.add(datetime, -@secs_per_day * 21)
   end
 end

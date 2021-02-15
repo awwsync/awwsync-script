@@ -91,6 +91,24 @@ defmodule Github do
     end
   end
 
+  def get_releases(owner, repo, since_date) do
+    url = get_repo_releases_url(owner, repo)
+    releases = fetch_from_gh(url)
+
+    Enum.filter(releases, fn %{"published_at" => release_publication_date} ->
+      case release_publication_date do
+        # filter out draft releases (not published yet)
+        nil ->
+          false
+
+        _ ->
+          {:ok, release_publication_dt, _offset} = DateTime.from_iso8601(release_publication_date)
+
+          DateTime.compare(release_publication_dt, since_date) in [:gt, :eq]
+      end
+    end)
+  end
+
   defp fetch_from_gh(url, query_params \\ %{}) do
     query_string = URI.encode_query(query_params)
 
