@@ -54,7 +54,7 @@ defmodule Events.Github do
         Map.put(issue, "timeline", timeline)
       end)
 
-    issues_with_timeline
+    Enum.map(issues_with_timeline, &timeline_event_to_an_event/1)
   end
 
   @doc """
@@ -76,10 +76,12 @@ defmodule Events.Github do
       :lt ->
         merged_event = "merged"
 
-        Enum.filter(new_acc, fn %{"event" => event_type, "created_at" => event_date} ->
+        new_acc
+        |> Enum.filter(fn %{"event" => event_type, "created_at" => event_date} ->
           {:ok, event_dt, _offset} = DateTime.from_iso8601(event_date)
           DateTime.compare(event_dt, since_date) in [:gt, :eq] && event_type === merged_event
         end)
+        |> Enum.map(&merged_pr_to_an_event/1)
     end
   end
 
@@ -88,7 +90,8 @@ defmodule Events.Github do
     url = get_repo_releases_url(owner, repo)
     releases = fetch_from_gh(url)
 
-    Enum.filter(releases, fn %{"published_at" => release_publication_date} ->
+    releases
+    |> Enum.filter(fn %{"published_at" => release_publication_date} ->
       case release_publication_date do
         # filter out draft releases (not published yet)
         nil ->
@@ -100,6 +103,7 @@ defmodule Events.Github do
           DateTime.compare(release_publication_dt, since_date) in [:gt, :eq]
       end
     end)
+    |> Enum.map(&release_to_an_event/1)
   end
 
   @spec fetch_from_gh(String.t(), any) :: any
@@ -117,13 +121,16 @@ defmodule Events.Github do
 
   @spec release_to_an_event(any) :: awwsync_event
   defp release_to_an_event(release) do
+    release
   end
 
   @spec merged_pr_to_an_event(any) :: awwsync_event
   defp merged_pr_to_an_event(pr) do
+    pr
   end
 
   @spec timeline_event_to_an_event(any) :: awwsync_event
   defp timeline_event_to_an_event(event) do
+    event
   end
 end
