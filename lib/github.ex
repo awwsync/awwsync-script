@@ -1,33 +1,23 @@
 defmodule Github do
-  @watched_events [
-    "closed",
-    "commented",
-    "committed",
-    "convert_to_draft",
-    "cross-referenced",
-    "mentioned",
-    "merged",
-    "ready_for_review",
-    "reopened",
-    "review_requested",
-    "reviewed"
-  ]
-
   # for new releases
+  @spec get_repo_releases_url(String.t(), String.t()) :: String.t()
   defp get_repo_releases_url(owner, repo) do
     "https://api.github.com/repos/#{owner}/#{repo}/releases"
   end
 
   # for new PRs/issues
+  @spec get_repo_issues_url(String.t(), String.t()) :: String.t()
   defp get_repo_issues_url(owner, repo) do
     "https://api.github.com/repos/#{owner}/#{repo}/issues"
   end
 
+  @spec get_issues_events_url(String.t(), String.t()) :: String.t()
   defp get_issues_events_url(owner, repo) do
     "https://api.github.com/repos/#{owner}/#{repo}/issues/events"
   end
 
   # for comments/etc on a particular issue
+  @spec get_issue_timeline_events_url(String.t(), String.t(), Integer.t()) :: String.t()
   defp get_issue_timeline_events_url(owner, repo, issue_number) do
     "https://api.github.com/repos/#{owner}/#{repo}/issues/#{issue_number}/timeline"
   end
@@ -91,6 +81,7 @@ defmodule Github do
     end
   end
 
+  @spec get_releases(String.t(), String.t(), DateTime.t()) :: list
   def get_releases(owner, repo, since_date) do
     url = get_repo_releases_url(owner, repo)
     releases = fetch_from_gh(url)
@@ -109,7 +100,8 @@ defmodule Github do
     end)
   end
 
-  defp fetch_from_gh(url, query_params \\ %{}) do
+  @spec fetch_from_gh(String.t(), any) :: any
+  def fetch_from_gh(url, query_params \\ %{}) do
     query_string = URI.encode_query(query_params)
 
     %{:body => data} =
