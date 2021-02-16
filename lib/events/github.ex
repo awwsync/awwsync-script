@@ -1,4 +1,6 @@
-defmodule Github do
+defmodule Events.Github do
+  use Events.Types
+
   # for new releases
   @spec get_repo_releases_url(String.t(), String.t()) :: String.t()
   defp get_repo_releases_url(owner, repo) do
@@ -111,5 +113,17 @@ defmodule Github do
 
     {:ok, json_data} = Jason.decode(data)
     json_data
+  end
+
+  @spec release_to_an_event(any) :: awwsync_event
+  defp release_to_an_event(release) do
+  end
+
+  @spec merged_pr_to_an_event(any) :: awwsync_event
+  defp merged_pr_to_an_event(pr) do
+  end
+
+  @spec timeline_event_to_an_event(any) :: awwsync_event
+  defp timeline_event_to_an_event(event) do
   end
 end
