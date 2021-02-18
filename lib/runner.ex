@@ -1,8 +1,8 @@
-defmodule AwwSync do
+defmodule Runner do
   @secs_per_day 86400
 
   def generate_doc do
-    Events.Github.get_merged_prs("facebook", "react", get_since_date())
+    Events.Github.get_releases("facebook", "react", get_since_date())
     |> Slack.prepare_message()
     |> Slack.send_message()
   end

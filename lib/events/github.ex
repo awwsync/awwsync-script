@@ -1,6 +1,4 @@
 defmodule Events.Github do
-  use Events.Types
-
   # for new releases
   @spec get_repo_releases_url(String.t(), String.t()) :: String.t()
   defp get_repo_releases_url(owner, repo) do
@@ -119,17 +117,29 @@ defmodule Events.Github do
     json_data
   end
 
-  @spec release_to_an_event(any) :: awwsync_event
+  @spec release_to_an_event(map()) :: Events.AwwSync.t()
   defp release_to_an_event(release) do
-    release
+    %{"author" => actor, "name" => name, "html_url" => url, "id" => id, "body" => body} = release
+
+    %Events.AwwSync{
+      platform: "github",
+      event_type: "release",
+      actor: actor,
+      subject: %{
+        id: id,
+        url: url,
+        name: name
+      },
+      event_payload: body
+    }
   end
 
-  @spec merged_pr_to_an_event(any) :: awwsync_event
+  @spec merged_pr_to_an_event(any) :: Events.AwwSync.t()
   defp merged_pr_to_an_event(pr) do
     pr
   end
 
-  @spec timeline_event_to_an_event(any) :: awwsync_event
+  @spec timeline_event_to_an_event(any) :: Events.AwwSync.t()
   defp timeline_event_to_an_event(event) do
     event
   end
