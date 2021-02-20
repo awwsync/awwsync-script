@@ -32,8 +32,8 @@ defmodule Events.Github do
   - Merged PRs
   - Commits
   """
-  @spec get_issues_events(String.t(), String.t(), DateTime.t()) :: [any]
-  def get_issues_events(owner, repo, since_date) do
+  @spec get_issues_with_timeline_events(String.t(), String.t(), DateTime.t()) :: [any]
+  def get_issues_with_timeline_events(owner, repo, since_date) do
     issues_url = get_repo_issues_url(owner, repo)
 
     issues =
@@ -52,14 +52,19 @@ defmodule Events.Github do
         Map.put(issue, "timeline", timeline)
       end)
 
-    Enum.map(issues_with_timeline, &timeline_event_to_awwsync_event/1)
+    new_issues =
+      issues_with_timeline
+      |> Enum.filter(fn issue -> is_new_issue(issue, since_date) end)
+      |> Enum.map(&new_issue_to_awwsync_event/1)
+
+    new_issues
   end
 
   @doc """
   Retrieves merged PRs
   """
-  @spec get_merged_prs(String.t(), String.t(), DateTime.t(), Integer.t(), List.t()) :: list
-  def get_merged_prs(owner, repo, since_date, page \\ 1, acc \\ []) do
+  @spec get_merged_prs_events(String.t(), String.t(), DateTime.t(), Integer.t(), List.t()) :: list
+  def get_merged_prs_events(owner, repo, since_date, page \\ 1, acc \\ []) do
     url = get_issues_events_url(owner, repo)
     events = fetch_from_gh(url, %{page: page})
     new_acc = acc ++ events
@@ -69,7 +74,7 @@ defmodule Events.Github do
 
     case DateTime.compare(last_event_date, since_date) do
       res when res in [:gt, :eq] ->
-        get_merged_prs(owner, repo, since_date, page + 1, new_acc)
+        get_merged_prs_events(owner, repo, since_date, page + 1, new_acc)
 
       :lt ->
         merged_event = "merged"
@@ -83,8 +88,8 @@ defmodule Events.Github do
     end
   end
 
-  @spec get_releases(String.t(), String.t(), DateTime.t()) :: list
-  def get_releases(owner, repo, since_date) do
+  @spec get_releases_events(String.t(), String.t(), DateTime.t()) :: list
+  def get_releases_events(owner, repo, since_date) do
     url = get_repo_releases_url(owner, repo)
     releases = fetch_from_gh(url)
 
@@ -110,7 +115,8 @@ defmodule Events.Github do
 
     %{:body => data} =
       HTTPoison.get!(url <> "?#{query_string}", [
-        {"Authorization", "token " <> System.get_env("GITHUB_ACCESS_TOKEN", "")}
+        {"Authorization", "token " <> System.get_env("GITHUB_ACCESS_TOKEN", "")},
+        {"Accept", "application/vnd.github.mockingbird-preview+json"}
       ])
 
     {:ok, json_data} = Jason.decode(data)
@@ -119,7 +125,8 @@ defmodule Events.Github do
 
   @spec release_to_awwsync_event(map()) :: Events.AwwSync.t()
   defp release_to_awwsync_event(release) do
-    %{"author" => actor, "name" => name, "html_url" => url, "id" => id, "body" => body} = release
+    %{"author" => actor, "name" => name, "html_url" => html_url, "id" => id, "body" => body} =
+      release
 
     %Events.AwwSync{
       platform: "github",
@@ -127,10 +134,11 @@ defmodule Events.Github do
       actor: actor,
       subject: %{
         id: id,
-        url: url,
-        name: name
+        url: html_url,
+        name: name,
+        body: body
       },
-      event_payload: body
+      event_payload: nil
     }
   end
 
@@ -147,8 +155,43 @@ defmodule Events.Github do
     }
   end
 
+  defp is_new_issue(event, since_date) do
+    %{"created_at" => issue_creation_date} = event
+    {:ok, creation_dt, _offset} = DateTime.from_iso8601(issue_creation_date)
+
+    case DateTime.compare(creation_dt, since_date) do
+      res when res in [:gt, :eq] -> true
+      _ -> false
+    end
+  end
+
+  defp new_issue_to_awwsync_event(event) do
+    %{
+      "user" => creator,
+      "title" => issue_title,
+      "body" => body,
+      "html_url" => html_url,
+      "id" => id
+    } = event
+
+    %Events.AwwSync{
+      platform: "github",
+      event_type: "new_issue",
+      actor: creator,
+      subject: %{
+        name: issue_title,
+        url: html_url,
+        id: id,
+        body: body
+      },
+      event_payload: nil
+    }
+  end
+
   @spec timeline_event_to_awwsync_event(any) :: Events.AwwSync.t()
   defp timeline_event_to_awwsync_event(event) do
+    IO.inspect(event)
+
     event
   end
 end
