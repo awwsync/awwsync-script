@@ -52,7 +52,7 @@ defmodule Events.Github do
         Map.put(issue, "timeline", timeline)
       end)
 
-    Enum.map(issues_with_timeline, &timeline_event_to_an_event/1)
+    Enum.map(issues_with_timeline, &timeline_event_to_awwsync_event/1)
   end
 
   @doc """
@@ -79,7 +79,7 @@ defmodule Events.Github do
           {:ok, event_dt, _offset} = DateTime.from_iso8601(event_date)
           DateTime.compare(event_dt, since_date) in [:gt, :eq] && event_type === merged_event
         end)
-        |> Enum.map(&merged_pr_to_an_event/1)
+        |> Enum.map(&merged_pr_to_awwsync_event/1)
     end
   end
 
@@ -101,7 +101,7 @@ defmodule Events.Github do
           DateTime.compare(release_publication_dt, since_date) in [:gt, :eq]
       end
     end)
-    |> Enum.map(&release_to_an_event/1)
+    |> Enum.map(&release_to_awwsync_event/1)
   end
 
   @spec fetch_from_gh(String.t(), any) :: any
@@ -117,8 +117,8 @@ defmodule Events.Github do
     json_data
   end
 
-  @spec release_to_an_event(map()) :: Events.AwwSync.t()
-  defp release_to_an_event(release) do
+  @spec release_to_awwsync_event(map()) :: Events.AwwSync.t()
+  defp release_to_awwsync_event(release) do
     %{"author" => actor, "name" => name, "html_url" => url, "id" => id, "body" => body} = release
 
     %Events.AwwSync{
@@ -134,13 +134,21 @@ defmodule Events.Github do
     }
   end
 
-  @spec merged_pr_to_an_event(any) :: Events.AwwSync.t()
-  defp merged_pr_to_an_event(pr) do
-    pr
+  @spec merged_pr_to_awwsync_event(any) :: Events.AwwSync.t()
+  defp merged_pr_to_awwsync_event(pr) do
+    %{"actor" => actor, "issue" => issue} = pr
+
+    %Events.AwwSync{
+      platform: "github",
+      event_type: "merged_pr",
+      actor: actor,
+      subject: issue,
+      event_payload: nil
+    }
   end
 
-  @spec timeline_event_to_an_event(any) :: Events.AwwSync.t()
-  defp timeline_event_to_an_event(event) do
+  @spec timeline_event_to_awwsync_event(any) :: Events.AwwSync.t()
+  defp timeline_event_to_awwsync_event(event) do
     event
   end
 end
