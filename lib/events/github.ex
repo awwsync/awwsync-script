@@ -54,7 +54,9 @@ defmodule Events.Github do
 
     new_issues =
       issues_with_timeline
-      |> Enum.filter(fn issue -> is_new_issue(issue, since_date) end)
+      |> Enum.filter(fn %{"created_at" => creation_date} ->
+        Utils.Dates.is_date_gt_or_eq(creation_date, since_date)
+      end)
       |> Enum.map(&new_issue_to_awwsync_event/1)
 
     new_issues
@@ -81,8 +83,7 @@ defmodule Events.Github do
 
         new_acc
         |> Enum.filter(fn %{"event" => event_type, "created_at" => event_date} ->
-          {:ok, event_dt, _offset} = DateTime.from_iso8601(event_date)
-          DateTime.compare(event_dt, since_date) in [:gt, :eq] && event_type === merged_event
+          Utils.Dates.is_date_gt_or_eq(event_date, since_date) && event_type === merged_event
         end)
         |> Enum.map(&merged_pr_to_awwsync_event/1)
     end
@@ -101,9 +102,7 @@ defmodule Events.Github do
           false
 
         _ ->
-          {:ok, release_publication_dt, _offset} = DateTime.from_iso8601(release_publication_date)
-
-          DateTime.compare(release_publication_dt, since_date) in [:gt, :eq]
+          Utils.Dates.is_date_gt_or_eq(release_publication_date, since_date)
       end
     end)
     |> Enum.map(&release_to_awwsync_event/1)
@@ -153,16 +152,6 @@ defmodule Events.Github do
       subject: issue,
       event_payload: nil
     }
-  end
-
-  defp is_new_issue(event, since_date) do
-    %{"created_at" => issue_creation_date} = event
-    {:ok, creation_dt, _offset} = DateTime.from_iso8601(issue_creation_date)
-
-    case DateTime.compare(creation_dt, since_date) do
-      res when res in [:gt, :eq] -> true
-      _ -> false
-    end
   end
 
   defp new_issue_to_awwsync_event(event) do
