@@ -59,7 +59,14 @@ defmodule Events.Github do
       end)
       |> Enum.map(&new_issue_to_awwsync_event/1)
 
-    new_issues
+    timeline_events =
+      issues_with_timeline
+      |> Enum.filter(fn %{"created_at" => event_date} ->
+        Utils.Dates.is_date_gt_or_eq(event_date, since_date)
+      end)
+      |> Enum.map(fn %{"timeline" => timeline} -> timeline_event_to_awwsync_event(timeline) end)
+
+    new_issues ++ timeline_events
   end
 
   @doc """
@@ -178,9 +185,81 @@ defmodule Events.Github do
   end
 
   @spec timeline_event_to_awwsync_event(any) :: Events.AwwSync.t()
-  defp timeline_event_to_awwsync_event(event) do
-    IO.inspect(event)
+  defp timeline_event_to_awwsync_event(%{"event" => event_type} = event)
+       when event_type == "closed" do
+    %{"actor" => actor} = event
 
-    event
+    %Events.AwwSync{
+      platform: "github",
+      event_type: "new_issue",
+      actor: actor,
+      subject: %{
+        name: issue_title,
+        url: html_url,
+        id: id,
+        body: body
+      },
+      event_payload: nil
+    }
+  end
+
+  defp timeline_event_to_awwsync_event(%{"event" => event_type} = event)
+       when event_type == "commented" do
+    %{"actor" => actor} = event
+
+    %Events.AwwSync{
+      platform: "github",
+      event_type: "new_issue",
+      actor: actor,
+      subject: %{
+        name: issue_title,
+        url: html_url,
+        id: id,
+        body: body
+      },
+      event_payload: nil
+    }
+  end
+
+  defp timeline_event_to_awwsync_event(%{"event" => event_type} = event)
+       when event_type == "reviewed" do
+    %{"actor" => actor} = event
+
+    %Events.AwwSync{
+      platform: "github",
+      event_type: "new_issue",
+      actor: actor,
+      subject: %{
+        name: issue_title,
+        url: html_url,
+        id: id,
+        body: body
+      },
+      event_payload: nil
+    }
+  end
+
+  defp timeline_event_to_awwsync_event(%{"event" => event_type} = event)
+       when event_type == "review_requested" do
+    %{"actor" => actor} = event
+    nil
+  end
+
+  defp timeline_event_to_awwsync_event(%{"event" => event_type} = event)
+       when event_type == "committed" do
+    %{"actor" => actor} = event
+
+    %Events.AwwSync{
+      platform: "github",
+      event_type: "new_issue",
+      actor: actor,
+      subject: %{
+        name: issue_title,
+        url: html_url,
+        id: id,
+        body: body
+      },
+      event_payload: nil
+    }
   end
 end
