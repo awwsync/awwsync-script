@@ -49,7 +49,15 @@ defmodule Events.Github do
         timeline_url = get_issue_timeline_events_url(owner, repo, issue_number)
         timeline = fetch_from_gh(timeline_url)
 
-        Map.put(issue, "timeline", timeline)
+        awwsync_timeline_events =
+          timeline
+          # |> Enum.filter(fn %{"created_at" => event_date} ->
+          |> Enum.filter(fn %{"submitted_at" => event_date} ->
+            Utils.Dates.is_date_gt_or_eq(event_date, since_date)
+          end)
+          |> Enum.map(fn event -> timeline_event_to_awwsync_event(event) end)
+
+        Map.put(issue, "timeline", awwsync_timeline_events)
       end)
 
     new_issues =
@@ -61,10 +69,12 @@ defmodule Events.Github do
 
     timeline_events =
       issues_with_timeline
-      |> Enum.filter(fn %{"created_at" => event_date} ->
-        Utils.Dates.is_date_gt_or_eq(event_date, since_date)
+      |> Enum.map(fn issue ->
+        issue[:timeline]
       end)
-      |> Enum.map(fn %{"timeline" => timeline} -> timeline_event_to_awwsync_event(timeline) end)
+      |> List.flatten()
+
+    IO.puts(timeline_events)
 
     new_issues ++ timeline_events
   end
@@ -193,12 +203,7 @@ defmodule Events.Github do
       platform: "github",
       event_type: "new_issue",
       actor: actor,
-      subject: %{
-        name: issue_title,
-        url: html_url,
-        id: id,
-        body: body
-      },
+      subject: nil,
       event_payload: nil
     }
   end
@@ -211,12 +216,7 @@ defmodule Events.Github do
       platform: "github",
       event_type: "new_issue",
       actor: actor,
-      subject: %{
-        name: issue_title,
-        url: html_url,
-        id: id,
-        body: body
-      },
+      subject: nil,
       event_payload: nil
     }
   end
@@ -229,12 +229,7 @@ defmodule Events.Github do
       platform: "github",
       event_type: "new_issue",
       actor: actor,
-      subject: %{
-        name: issue_title,
-        url: html_url,
-        id: id,
-        body: body
-      },
+      subject: nil,
       event_payload: nil
     }
   end
@@ -253,12 +248,7 @@ defmodule Events.Github do
       platform: "github",
       event_type: "new_issue",
       actor: actor,
-      subject: %{
-        name: issue_title,
-        url: html_url,
-        id: id,
-        body: body
-      },
+      subject: nil,
       event_payload: nil
     }
   end
