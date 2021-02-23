@@ -7,29 +7,6 @@ defmodule Events.Github do
     "committed"
   ]
 
-  # for new releases
-  @spec get_repo_releases_url(String.t(), String.t()) :: String.t()
-  defp get_repo_releases_url(owner, repo) do
-    "https://api.github.com/repos/#{owner}/#{repo}/releases"
-  end
-
-  # for new PRs/issues
-  @spec get_repo_issues_url(String.t(), String.t()) :: String.t()
-  defp get_repo_issues_url(owner, repo) do
-    "https://api.github.com/repos/#{owner}/#{repo}/issues"
-  end
-
-  @spec get_issues_events_url(String.t(), String.t()) :: String.t()
-  defp get_issues_events_url(owner, repo) do
-    "https://api.github.com/repos/#{owner}/#{repo}/issues/events"
-  end
-
-  # for comments/etc on a particular issue
-  @spec get_issue_timeline_events_url(String.t(), String.t(), Integer.t()) :: String.t()
-  defp get_issue_timeline_events_url(owner, repo, issue_number) do
-    "https://api.github.com/repos/#{owner}/#{repo}/issues/#{issue_number}/timeline"
-  end
-
   @doc """
   Retrieves events related to issues (PRs are also considered issues)
   - New issues/PRs
@@ -82,7 +59,9 @@ defmodule Events.Github do
       end)
       |> List.flatten()
 
-    IO.puts(timeline_events)
+    IO.puts("timeline_events")
+    IO.inspect(timeline_events)
+    IO.puts("timeline_events end")
 
     new_issues ++ timeline_events
   end
@@ -271,5 +250,28 @@ defmodule Events.Github do
 
   defp check_timeline_event_date(%{"submitted_at" => event_date}, since_date) do
     Utils.Dates.is_date_gt_or_eq(event_date, since_date)
+  end
+
+  # for new releases
+  @spec get_repo_releases_url(String.t(), String.t()) :: String.t()
+  defp get_repo_releases_url(owner, repo) do
+    "https://api.github.com/repos/#{owner}/#{repo}/releases"
+  end
+
+  # for new PRs/issues
+  @spec get_repo_issues_url(String.t(), String.t()) :: String.t()
+  defp get_repo_issues_url(owner, repo) do
+    "https://api.github.com/repos/#{owner}/#{repo}/issues"
+  end
+
+  @spec get_issues_events_url(String.t(), String.t()) :: String.t()
+  defp get_issues_events_url(owner, repo) do
+    "https://api.github.com/repos/#{owner}/#{repo}/issues/events"
+  end
+
+  # for comments/etc on a particular issue
+  @spec get_issue_timeline_events_url(String.t(), String.t(), Integer.t()) :: String.t()
+  defp get_issue_timeline_events_url(owner, repo, issue_number) do
+    "https://api.github.com/repos/#{owner}/#{repo}/issues/#{issue_number}/timeline"
   end
 end
