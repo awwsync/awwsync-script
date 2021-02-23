@@ -1,4 +1,12 @@
 defmodule Events.Github do
+  @watched_timeline_events [
+    "closed",
+    "commented",
+    "reviewed",
+    "review_requested",
+    "committed"
+  ]
+
   # for new releases
   @spec get_repo_releases_url(String.t(), String.t()) :: String.t()
   defp get_repo_releases_url(owner, repo) do
@@ -51,9 +59,9 @@ defmodule Events.Github do
 
         awwsync_timeline_events =
           timeline
-          # |> Enum.filter(fn %{"created_at" => event_date} ->
-          |> Enum.filter(fn %{"submitted_at" => event_date} ->
-            Utils.Dates.is_date_gt_or_eq(event_date, since_date)
+          |> Enum.filter(fn event ->
+            check_timeline_event_date(event, since_date) &&
+              event[:event] in @watched_timeline_events
           end)
           |> Enum.map(fn event -> timeline_event_to_awwsync_event(event) end)
 
@@ -251,5 +259,17 @@ defmodule Events.Github do
       subject: nil,
       event_payload: nil
     }
+  end
+
+  defp check_timeline_event_date(%{"committer" => %{"date" => event_date}}, since_date) do
+    Utils.Dates.is_date_gt_or_eq(event_date, since_date)
+  end
+
+  defp check_timeline_event_date(%{"created_at" => event_date}, since_date) do
+    Utils.Dates.is_date_gt_or_eq(event_date, since_date)
+  end
+
+  defp check_timeline_event_date(%{"submitted_at" => event_date}, since_date) do
+    Utils.Dates.is_date_gt_or_eq(event_date, since_date)
   end
 end
