@@ -38,7 +38,7 @@ defmodule Events.Github do
           timeline
           |> Enum.filter(fn event ->
             check_timeline_event_date(event, since_date) &&
-              event[:event] in @watched_timeline_events
+              event["event"] in @watched_timeline_events
           end)
           |> Enum.map(&timeline_event_to_awwsync_event/1)
 
@@ -54,15 +54,8 @@ defmodule Events.Github do
 
     timeline_events =
       issues_with_timeline
-      |> Enum.map(fn issue ->
-        IO.inspect(issue)
-        issue[:timeline]
-      end)
+      |> Enum.map(fn issue -> issue["timeline"] end)
       |> List.flatten()
-
-    # IO.puts("timeline_events")
-    # IO.inspect(timeline_events)
-    # IO.puts("timeline_events end")
 
     new_issues ++ timeline_events
   end
@@ -189,7 +182,7 @@ defmodule Events.Github do
 
     %Events.AwwSync{
       platform: "github",
-      event_type: "new_issue",
+      event_type: "issue_closed",
       actor: actor,
       subject: nil,
       event_payload: nil
@@ -202,7 +195,7 @@ defmodule Events.Github do
 
     %Events.AwwSync{
       platform: "github",
-      event_type: "new_issue",
+      event_type: "issue_comment",
       actor: actor,
       subject: nil,
       event_payload: nil
@@ -215,7 +208,7 @@ defmodule Events.Github do
 
     %Events.AwwSync{
       platform: "github",
-      event_type: "new_issue",
+      event_type: "pr_review",
       actor: actor,
       subject: nil,
       event_payload: nil
@@ -225,7 +218,14 @@ defmodule Events.Github do
   defp timeline_event_to_awwsync_event(%{"event" => event_type} = event)
        when event_type == "review_requested" do
     %{"actor" => actor} = event
-    nil
+
+    %Events.AwwSync{
+      platform: "github",
+      event_type: "review_request",
+      actor: actor,
+      subject: nil,
+      event_payload: nil
+    }
   end
 
   defp timeline_event_to_awwsync_event(%{"event" => event_type} = event)
@@ -234,7 +234,7 @@ defmodule Events.Github do
 
     %Events.AwwSync{
       platform: "github",
-      event_type: "new_issue",
+      event_type: "commit",
       actor: actor,
       subject: nil,
       event_payload: nil

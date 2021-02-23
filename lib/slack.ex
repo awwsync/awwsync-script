@@ -18,7 +18,7 @@ defmodule Slack do
   end
 
   def prepare_message(events) do
-    IO.inspect(events)
+    # IO.inspect(events)
     # https://api.slack.com/reference/surfaces/formatting
     events_by_actor = events |> get_events_by_actor()
 
