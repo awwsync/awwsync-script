@@ -40,7 +40,7 @@ defmodule Events.Github do
             check_timeline_event_date(event, since_date) &&
               event[:event] in @watched_timeline_events
           end)
-          |> Enum.map(fn event -> timeline_event_to_awwsync_event(event) end)
+          |> Enum.map(&timeline_event_to_awwsync_event/1)
 
         Map.put(issue, "timeline", awwsync_timeline_events)
       end)
@@ -55,13 +55,14 @@ defmodule Events.Github do
     timeline_events =
       issues_with_timeline
       |> Enum.map(fn issue ->
+        IO.inspect(issue)
         issue[:timeline]
       end)
       |> List.flatten()
 
-    IO.puts("timeline_events")
-    IO.inspect(timeline_events)
-    IO.puts("timeline_events end")
+    # IO.puts("timeline_events")
+    # IO.inspect(timeline_events)
+    # IO.puts("timeline_events end")
 
     new_issues ++ timeline_events
   end
