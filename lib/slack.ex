@@ -13,7 +13,7 @@ defmodule Slack do
 
   def get_events_description(events) do
     events
-    |> Enum.map(fn %{"event" => event_type} -> "- #{event_type}\n" end)
+    |> Enum.map(fn %{:event_type => event_type} -> "- #{event_type}\n" end)
     |> Enum.join("\n")
   end
 
