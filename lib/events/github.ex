@@ -267,13 +267,14 @@ defmodule Events.Github do
 
   defp timeline_event_to_awwsync_event(%{"event" => event_type} = event, issue)
        when event_type == "committed" do
+    IO.inspect(event)
     %{"author" => actor, "message" => message, "html_url" => commit_url} = event
     %{"body" => body, "html_url" => html_url, "id" => id, "title" => pr_title} = issue
 
     %Events.AwwSync{
       platform: "github",
       event_type: "commit",
-      actor: actor,
+      actor: Map.put(actor, "login", hd(String.split(actor["email"], "@"))),
       subject: %{
         name: pr_title,
         url: html_url,
