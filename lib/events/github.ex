@@ -180,25 +180,46 @@ defmodule Events.Github do
        when event_type == "closed" do
     %{"actor" => actor} = event
 
+    %{
+      "title" => issue_title,
+      "body" => body,
+      "html_url" => html_url,
+      "id" => id
+    } = issue
+
     %Events.AwwSync{
       platform: "github",
       event_type: "issue_closed",
       actor: actor,
-      subject: nil,
+      subject: %{
+        name: issue_title,
+        url: html_url,
+        id: id,
+        body: body
+      },
       event_payload: nil
     }
   end
 
   defp timeline_event_to_awwsync_event(%{"event" => event_type} = event, issue)
        when event_type == "commented" do
-    %{"actor" => actor} = event
+    %{"user" => actor, "html_url" => comment_url, "body" => comment_body} = event
+    %{"body" => issue_body, "html_url" => html_url, "id" => id, "title" => pr_title} = issue
 
     %Events.AwwSync{
       platform: "github",
       event_type: "issue_comment",
       actor: actor,
-      subject: nil,
-      event_payload: nil
+      subject: %{
+        name: pr_title,
+        url: html_url,
+        id: id,
+        body: issue_body
+      },
+      event_payload: %{
+        html_url: comment_url,
+        body: comment_body
+      }
     }
   end
 
@@ -225,23 +246,28 @@ defmodule Events.Github do
 
   defp timeline_event_to_awwsync_event(%{"event" => event_type} = event, issue)
        when event_type == "review_requested" do
-    %{"actor" => actor} = event
+    %{"actor" => actor, "requested_reviewer" => requested_reviewer} = event
+    %{"body" => body, "html_url" => html_url, "id" => id, "title" => pr_title} = issue
 
     %Events.AwwSync{
       platform: "github",
       event_type: "review_request",
       actor: actor,
-      subject: nil,
-      event_payload: nil
+      subject: %{
+        name: pr_title,
+        url: html_url,
+        id: id,
+        body: body
+      },
+      event_payload: %{
+        requested_reviewer: requested_reviewer
+      }
     }
   end
 
   defp timeline_event_to_awwsync_event(%{"event" => event_type} = event, issue)
        when event_type == "committed" do
-    IO.inspect(event)
-    IO.inspect(issue)
-
-    %{"author" => actor, "message" => message, "commit_url" => commit_url} = event
+    %{"author" => actor, "message" => message, "html_url" => commit_url} = event
     %{"body" => body, "html_url" => html_url, "id" => id, "title" => pr_title} = issue
 
     %Events.AwwSync{
