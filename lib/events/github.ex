@@ -7,6 +7,11 @@ defmodule Events.Github do
     "committed"
   ]
 
+  @spec get_events(String.t(), String.t(), DateTime.t(), list(Regex.t())) ::
+          list(Events.AwwSync.t())
+  def get_events(owner, repo, since_date, ignored_users \\ []) do
+  end
+
   @doc """
   Retrieves events related to issues (PRs are also considered issues)
   - New issues/PRs
@@ -17,8 +22,9 @@ defmodule Events.Github do
   - Merged PRs
   - Commits
   """
-  @spec get_issues_with_timeline_events(String.t(), String.t(), DateTime.t()) :: [any]
-  def get_issues_with_timeline_events(owner, repo, since_date) do
+  @spec get_issues_with_timeline_events(String.t(), String.t(), DateTime.t(), list(Regex.t())) ::
+          [any]
+  def get_issues_with_timeline_events(owner, repo, since_date, ignored_users \\ []) do
     issues_url = get_repo_issues_url(owner, repo)
 
     issues =
