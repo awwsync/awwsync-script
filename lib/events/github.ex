@@ -9,7 +9,16 @@ defmodule Events.Github do
 
   @spec get_events(String.t(), String.t(), DateTime.t(), list(Regex.t())) ::
           list(Events.AwwSync.t())
-  def get_events(owner, repo, since_date, ignored_users \\ []) do
+  def get_events(owner, repo, since_date, excluded_users \\ []) do
+    issues_events = get_issues_with_timeline_events(owner, repo, since_date)
+    merged_prs = get_merged_prs_events(owner, repo, since_date)
+    releases = get_releases_events(owner, repo, since_date)
+
+    events = issues_events ++ merged_prs ++ releases
+
+    Enum.filter(events, fn %{:actor => %{"login" => login}} ->
+      !Enum.any?(excluded_users, fn user_regex -> String.match?(login, user_regex) end)
+    end)
   end
 
   @doc """
@@ -22,9 +31,9 @@ defmodule Events.Github do
   - Merged PRs
   - Commits
   """
-  @spec get_issues_with_timeline_events(String.t(), String.t(), DateTime.t(), list(Regex.t())) ::
+  @spec get_issues_with_timeline_events(String.t(), String.t(), DateTime.t()) ::
           [any]
-  def get_issues_with_timeline_events(owner, repo, since_date, ignored_users \\ []) do
+  def get_issues_with_timeline_events(owner, repo, since_date) do
     issues_url = get_repo_issues_url(owner, repo)
 
     issues =

@@ -11,6 +11,7 @@ defmodule Slack do
     events_by_actor
   end
 
+  @spec get_events_description(any) :: binary
   def get_events_description(events) do
     events
     |> Enum.map(fn event -> "- #{Events.Github.Descriptions.get_event_description(event)}\n" end)
