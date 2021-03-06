@@ -55,7 +55,7 @@ defmodule Events.Github.Descriptions do
       when event_type == "merged_pr" do
     %{:actor => actor, :subject => subject} = awwsync_event
 
-    message = "#{actor["login"]} Merged <#{subject.url}|#{subject.name}>"
+    message = "#{actor["login"]} Merged <#{subject["html_url"]}|#{subject["title"]}>"
 
     message
   end
