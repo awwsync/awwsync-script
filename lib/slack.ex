@@ -1,14 +1,14 @@
 defmodule Slack do
   defp get_events_by_actor(events) do
-    events_by_actor =
-      Enum.reduce(events, %{}, fn %{:actor => %{"login" => actor_login}} = event, map ->
-        case Map.get(map, actor_login) do
-          nil -> Map.put(map, actor_login, [event])
-          arr -> Map.put(map, actor_login, [event | arr])
+    events_by_issue =
+      Enum.reduce(events, %{}, fn %{:subject => %{:name => issue_name}} = event, map ->
+        case Map.get(map, issue_name) do
+          nil -> Map.put(map, issue_name, [event])
+          arr -> Map.put(map, issue_name, [event | arr])
         end
       end)
 
-    events_by_actor
+    events_by_issue
   end
 
   @spec get_events_description(any) :: binary
