@@ -158,11 +158,23 @@ defmodule Events.Github do
   defp merged_pr_to_awwsync_event(pr) do
     %{"actor" => actor, "issue" => issue} = pr
 
+    %{
+      "title" => issue_title,
+      "body" => body,
+      "html_url" => html_url,
+      "id" => id
+    } = issue
+
     %Events.AwwSync{
       platform: "github",
       event_type: "merged_pr",
       actor: actor,
-      subject: issue,
+      subject: %{
+        name: issue_title,
+        url: html_url,
+        id: id,
+        body: body
+      },
       event_payload: nil
     }
   end

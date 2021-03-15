@@ -1,5 +1,5 @@
 defmodule Slack do
-  defp get_events_by_actor(events) do
+  defp get_events_by_issue(events) do
     events_by_issue =
       Enum.reduce(events, %{}, fn %{:subject => %{:name => issue_name}} = event, map ->
         case Map.get(map, issue_name) do
@@ -19,13 +19,12 @@ defmodule Slack do
   end
 
   def prepare_message(events) do
-    # IO.inspect(events)
     # https://api.slack.com/reference/surfaces/formatting
-    events_by_actor = events |> get_events_by_actor()
+    events_by_issue = events |> get_events_by_issue()
 
     message =
-      for {actor, events} <- events_by_actor,
-          do: "\n\n*#{actor}*\n#{get_events_description(events)}",
+      for {issue, events} <- events_by_issue,
+          do: "\n\n*#{issue}*\n#{get_events_description(events)}",
           into: ""
 
     message
