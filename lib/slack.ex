@@ -18,9 +18,14 @@ defmodule Slack do
     |> Enum.join("\n")
   end
 
+  @spec sort_events_by_date([Events.AwwSync.t()]) :: [Events.AwwSync.t()]
+  def sort_events_by_date(events) do
+    Enum.sort_by(events, & &1.date, {:desc, DateTime})
+  end
+
   def prepare_message(events) do
     # https://api.slack.com/reference/surfaces/formatting
-    events_by_issue = events |> get_events_by_issue()
+    events_by_issue = events |> sort_events_by_date() |> get_events_by_issue()
 
     message =
       for {issue, events} <- events_by_issue,
