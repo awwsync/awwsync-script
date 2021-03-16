@@ -137,13 +137,22 @@ defmodule Events.Github do
 
   @spec release_to_awwsync_event(map()) :: Events.AwwSync.t()
   defp release_to_awwsync_event(release) do
-    %{"author" => actor, "name" => name, "html_url" => html_url, "id" => id, "body" => body} =
-      release
+    %{
+      "author" => actor,
+      "name" => name,
+      "html_url" => html_url,
+      "id" => id,
+      "body" => body,
+      "published_at" => release_publication_date
+    } = release
+
+    {:ok, dt_date, _offset} = DateTime.from_iso8601(release_publication_date)
 
     %Events.AwwSync{
       platform: "github",
       event_type: "release",
       actor: actor,
+      date: dt_date,
       subject: %{
         id: id,
         url: html_url,
@@ -156,7 +165,7 @@ defmodule Events.Github do
 
   @spec merged_pr_to_awwsync_event(any) :: Events.AwwSync.t()
   defp merged_pr_to_awwsync_event(pr) do
-    %{"actor" => actor, "issue" => issue} = pr
+    %{"actor" => actor, "issue" => issue, "created_at" => merged_at} = pr
 
     %{
       "title" => issue_title,
@@ -165,10 +174,13 @@ defmodule Events.Github do
       "id" => id
     } = issue
 
+    {:ok, dt_date, _offset} = DateTime.from_iso8601(merged_at)
+
     %Events.AwwSync{
       platform: "github",
       event_type: "merged_pr",
       actor: actor,
+      date: dt_date,
       subject: %{
         name: issue_title,
         url: html_url,
@@ -179,19 +191,24 @@ defmodule Events.Github do
     }
   end
 
+  @spec new_issue_to_awwsync_event(any) :: Events.AwwSync.t()
   defp new_issue_to_awwsync_event(event) do
     %{
       "user" => creator,
       "title" => issue_title,
       "body" => body,
       "html_url" => html_url,
-      "id" => id
+      "id" => id,
+      "created_at" => created_at
     } = event
+
+    {:ok, dt_date, _offset} = DateTime.from_iso8601(created_at)
 
     %Events.AwwSync{
       platform: "github",
       event_type: "new_issue",
       actor: creator,
+      date: dt_date,
       subject: %{
         name: issue_title,
         url: html_url,
@@ -205,7 +222,7 @@ defmodule Events.Github do
   @spec timeline_event_to_awwsync_event(any, any) :: Events.AwwSync.t()
   defp timeline_event_to_awwsync_event(%{"event" => event_type} = event, issue)
        when event_type == "closed" do
-    %{"actor" => actor} = event
+    %{"actor" => actor, "created_at" => event_date} = event
 
     %{
       "title" => issue_title,
@@ -214,10 +231,13 @@ defmodule Events.Github do
       "id" => id
     } = issue
 
+    {:ok, dt_date, _offset} = DateTime.from_iso8601(event_date)
+
     %Events.AwwSync{
       platform: "github",
       event_type: "issue_closed",
       actor: actor,
+      date: dt_date,
       subject: %{
         name: issue_title,
         url: html_url,
@@ -230,13 +250,22 @@ defmodule Events.Github do
 
   defp timeline_event_to_awwsync_event(%{"event" => event_type} = event, issue)
        when event_type == "commented" do
-    %{"user" => actor, "html_url" => comment_url, "body" => comment_body} = event
+    %{
+      "user" => actor,
+      "html_url" => comment_url,
+      "body" => comment_body,
+      "created_at" => event_date
+    } = event
+
     %{"body" => issue_body, "html_url" => html_url, "id" => id, "title" => pr_title} = issue
+
+    {:ok, dt_date, _offset} = DateTime.from_iso8601(event_date)
 
     %Events.AwwSync{
       platform: "github",
       event_type: "issue_comment",
       actor: actor,
+      date: dt_date,
       subject: %{
         name: pr_title,
         url: html_url,
@@ -252,13 +281,15 @@ defmodule Events.Github do
 
   defp timeline_event_to_awwsync_event(%{"event" => event_type} = event, issue)
        when event_type == "reviewed" do
-    %{"user" => actor, "state" => state} = event
+    %{"user" => actor, "state" => state, "submitted_at" => event_date} = event
     %{"body" => body, "html_url" => html_url, "id" => id, "title" => pr_title} = issue
+    {:ok, dt_date, _offset} = DateTime.from_iso8601(event_date)
 
     %Events.AwwSync{
       platform: "github",
       event_type: "pr_review",
       actor: actor,
+      date: dt_date,
       subject: %{
         name: pr_title,
         url: html_url,
@@ -273,13 +304,18 @@ defmodule Events.Github do
 
   defp timeline_event_to_awwsync_event(%{"event" => event_type} = event, issue)
        when event_type == "review_requested" do
-    %{"actor" => actor, "requested_reviewer" => requested_reviewer} = event
+    %{"actor" => actor, "requested_reviewer" => requested_reviewer, "created_at" => event_date} =
+      event
+
     %{"body" => body, "html_url" => html_url, "id" => id, "title" => pr_title} = issue
+
+    {:ok, dt_date, _offset} = DateTime.from_iso8601(event_date)
 
     %Events.AwwSync{
       platform: "github",
       event_type: "review_request",
       actor: actor,
+      date: dt_date,
       subject: %{
         name: pr_title,
         url: html_url,
@@ -294,13 +330,23 @@ defmodule Events.Github do
 
   defp timeline_event_to_awwsync_event(%{"event" => event_type} = event, issue)
        when event_type == "committed" do
-    %{"author" => actor, "message" => message, "html_url" => commit_url} = event
+    %{
+      "author" => actor,
+      "message" => message,
+      "html_url" => commit_url
+    } = event
+
+    %{"date" => event_date} = actor
+
     %{"body" => body, "html_url" => html_url, "id" => id, "title" => pr_title} = issue
+
+    {:ok, dt_date, _offset} = DateTime.from_iso8601(event_date)
 
     %Events.AwwSync{
       platform: "github",
       event_type: "commit",
       actor: Map.put(actor, "login", hd(String.split(actor["email"], "@"))),
+      date: dt_date,
       subject: %{
         name: pr_title,
         url: html_url,
